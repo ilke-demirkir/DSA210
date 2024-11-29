@@ -25,4 +25,5 @@ Keeping these in mind here are the research questions:
 5. How is my overall performance compared to the team's?
 
 Data:
+All the data used in this project is collected from the matches uploaded to youtube under the channel Sabancı Seahawks, I watched each game multiple times and collected the data by hand.
 [Seahawks.xlsx](https://github.com/user-attachments/files/17933601/Seahawks.xlsx)
