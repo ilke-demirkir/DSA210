@@ -7,6 +7,7 @@ The motivation of this project is to see how well I perform as a third-year play
 Main research questions:
 
 To explain these questions I would like to provide some definitions of ultimate:
+
 Forehand and Backhand throws: There isn't an easy way to explain this other than to say these terms represent throwing motions much like the forehand and backhand in tennis or table tennis. Namely one of these throws is meant to be released from the right side of your body, and the other one is released from the left side of your body.
 
 Hucks: A huck is a throw of over 40-50 yards
