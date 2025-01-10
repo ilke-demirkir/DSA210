@@ -1,0 +1,97 @@
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
+import matplotlib.pyplot as plt
+import re
+
+# Function to extract numeric values from a string, or return NaN if not possible
+def extract_numeric(value):
+    if isinstance(value, str):
+        match = re.search(r'\d+', value)  # Find the first numeric value
+        return float(match.group()) if match else None
+    return value  # If it's already numeric, return as is
+
+# Load data
+file_path = 'Seahawks.xlsx'
+data = pd.ExcelFile("Cleaned_Seahawks_Data.xlsx")
+sheet_data = data.parse('Sheet1')
+
+# Rename columns
+sheet_data = sheet_data.rename(
+    columns={
+        'Unnamed: 1': 'Player',
+        'Pass (Tutulan/ Atılan) Forehand/Backhand': 'PassForehandBackhand',
+        'Pull (Atılan/Sahaya Düşen)': 'Pull',
+    }
+)
+
+# Drop the last row representing the opponent team (CBO row)
+sheet_data = sheet_data[:-1]
+
+# Extract forehand and backhand data
+sheet_data[['ForehandSuccess', 'ForehandTotal']] = (
+    sheet_data['Forehand']
+    .str.extract(r'(\d+)/(\d+)', expand=True)
+    .astype(float)
+)
+sheet_data[['BackhandSuccess', 'BackhandTotal']] = (
+    sheet_data['Backhand']
+    .str.extract(r'(\d+)/(\d+)', expand=True)
+    .astype(float)
+)
+
+# Calculate completion percentages
+sheet_data['ForehandCompletion%'] = (sheet_data['ForehandSuccess'] / sheet_data['ForehandTotal']) * 100
+sheet_data['BackhandCompletion%'] = (sheet_data['BackhandSuccess'] / sheet_data['BackhandTotal']) * 100
+
+# Clean problematic columns
+problematic_columns = ['Sayı', 'Asist', 'Blok', 'Drop']
+for column in problematic_columns:
+    sheet_data[column] = sheet_data[column].apply(extract_numeric)
+
+# Drop rows where all these columns are NaN
+sheet_data = sheet_data.dropna(subset=problematic_columns, how='all')
+
+# Calculate performance
+sheet_data['Performance'] = (
+    sheet_data['Sayı'].fillna(0) +
+    (sheet_data['Asist'].fillna(0) * 0.5) +
+    (sheet_data['ForehandCompletion%'].fillna(0) + sheet_data['BackhandCompletion%'].fillna(0)) +
+    ((sheet_data['Blok'].fillna(0) - sheet_data['Drop'].fillna(0)) * 0.5)
+)
+
+# Extract performances
+ilke_performance = sheet_data[sheet_data['Player'] == 'İlke Demirkır']['Performance'].values
+ilke_game_numbers = np.arange(1, len(ilke_performance) + 1)
+
+team_performance = sheet_data.groupby('Turnuva İstatistikleri')['Performance'].mean().values
+game_numbers = np.arange(1, len(team_performance) + 1)
+
+# Polynomial Regression
+degree = 2
+poly = PolynomialFeatures(degree=degree)
+
+# Team regression
+X_team = poly.fit_transform(game_numbers.reshape(-1, 1))
+model_team = LinearRegression().fit(X_team, team_performance)
+team_predictions = model_team.predict(X_team)
+
+# İlke regression
+X_ilke = poly.fit_transform(ilke_game_numbers.reshape(-1, 1))
+model_ilke = LinearRegression().fit(X_ilke, ilke_performance)
+ilke_predictions = model_ilke.predict(X_ilke)
+
+# Visualization
+plt.figure(figsize=(10, 6))
+plt.scatter(game_numbers, team_performance, color="blue", label="Team Performance")
+plt.plot(game_numbers, team_predictions, color="cyan", label="Team Trend (Polynomial)")
+
+plt.scatter(ilke_game_numbers, ilke_performance, color="red", label="İlke's Performance")
+plt.plot(ilke_game_numbers, ilke_predictions, color="orange", label="İlke's Trend (Polynomial)")
+
+plt.xlabel("Games Over the Years")
+plt.ylabel("Performance")
+plt.title("Performance Comparison: İlke vs Team")
+plt.legend()
+plt.show()
