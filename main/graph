@@ -14,7 +14,7 @@ def extract_numeric(value):
 
 # Load data
 file_path = 'Seahawks.xlsx'
-data = pd.ExcelFile("Cleaned_Seahawks_Data.xlsx")
+data = pd.ExcelFile(file_path)
 sheet_data = data.parse('Sheet1')
 
 # Rename columns
